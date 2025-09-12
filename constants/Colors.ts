@@ -1,26 +1,86 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
+// App color scheme for Merchant App
+export const colors = {
+  background: '#121212',
+  accent: '#6c5ce71a',
+  cardBackground: '#1E1E1E',
+  surface: '#1E1E1E',
+  primary: '#6C5CE7',
+  secondary: '#00B894',
+  text: '#FFFFFF',
+  subtext: '#A0A0A0',
+  textSecondary: '#A0A0A0',
+  border: '#2A2A2A',
+  error: '#FF6B6B',
+  onError: '#FFFFFF',
+  success: '#00B894',
+  warning: '#FDCB6E',
+  info: '#3B82F6',
+  inactive: '#4A4A4A',
+  overlay: 'rgba(0, 0, 0, 0.7)',
+  gradientStart: '#6C5CE7',
+  gradientEnd: '#00B894',
+  category: '#1E1E1E',
+  buttonColor: '#FFFFFF',
+  onPrimary: '#FFFFFF',
+  onSecondary: '#FFFFFF',
+  shadow: '#000000',
+  toastColor: '#1E1E1E',
+  toastMessageColor: '#FFFFFF',
+  heartBackground: 'rgba(0, 0, 0, 0.8)',
+  searchBar: '#1E1E1E',
+  cardBorderColor: '#2A2A2A',
+  borderTabBar: '#2A2A2A',
+  homeHeader: '#0f3460'
+};
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+// Light theme colors
+export const lightColors = {
+  background: '#f2f2f7',
+  accent: '#6c5ce71a',
+  cardBackground: '#FFFFFF',
+  surface: '#FFFFFF',
+  primary: '#6C5CE7',
+  secondary: '#00B894',
+  text: '#212529',
+  subtext: '#6C757D',
+  textSecondary: '#6C757D',
+  border: '#e3e3e3',
+  error: '#FF6B6B',
+  onError: '#FFFFFF',
+  success: '#00B894',
+  warning: '#FDCB6E',
+  info: '#3B82F6',
+  inactive: '#B9BABD',
+  overlay: 'rgba(0, 0, 0, 0.5)',
+  gradientStart: '#6C5CE7',
+  gradientEnd: '#00B894',
+  category: '#e3e3e8',
+  buttonColor: '#FFFFFF',
+  onPrimary: '#FFFFFF',
+  onSecondary: '#FFFFFF',
+  shadow: '#000000',
+  toastColor: '#1E1E1E',
+  toastMessageColor: '#FFFFFF',
+  heartBackground: 'rgba(0, 0, 0, 0.8)',
+  searchBar: '#e2e2ed',
+  cardBorderColor: '#E8E9EA',
+  borderTabBar: '#2A2A2A',
+  homeHeader: '#667eea'
+};
 
-export const Colors = {
+export default {
   light: {
-    text: '#11181C',
+    text: '#000',
     background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    tint: '#6C5CE7',
+    tabIconDefault: '#ccc',
+    tabIconSelected: '#6C5CE7',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    text: '#fff',
+    background: '#121212',
+    tint: '#6C5CE7',
+    tabIconDefault: '#4A4A4A',
+    tabIconSelected: '#6C5CE7',
   },
 };
