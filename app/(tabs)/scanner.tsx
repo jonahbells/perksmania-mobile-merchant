@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useThemeStore } from '../../store/themeStore';
-import QRScanner from '../../components/QRScanner';
+import { useThemeStore } from '@/store/themeStore';
+import QRScanner from '@/components/QRScanner';
 import { Ionicons } from '@expo/vector-icons';
 import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
 import { useFocusEffect } from '@react-navigation/native';

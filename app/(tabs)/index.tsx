@@ -1,22 +1,21 @@
-import React, { useEffect, useCallback } from 'react';
+import Card, { CardDivider } from '@/components/Card';
+import { useAuthStore } from '@/store/authStore';
+import { usePerksStore } from '@/store/perksStore';
+import { useThemeStore } from '@/store/themeStore';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-  TouchableOpacity,
   Dimensions,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useThemeStore } from '../../store/themeStore';
-import { useAuthStore } from '../../store/authStore';
-import { usePerksStore } from '../../store/perksStore';
-import Card, { CardDivider } from '../../components/Card';
-import { Ionicons } from '@expo/vector-icons';
 import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
-import { VictoryChart, VictoryArea, VictoryAxis, VictoryTheme } from 'victory-native';
 
 const { width } = Dimensions.get('window');
 
@@ -74,6 +73,17 @@ function QuickAction({ title, icon, onPress, color }: QuickActionProps) {
   );
 }
 
+const getDefaultDateRange = () => {
+  const today = new Date();
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+  
+  return {
+    startDate: thirtyDaysAgo,
+    endDate: today
+  };
+};
+
 export default function DashboardScreen() {
   const { colors } = useThemeStore();
   const { user } = useAuthStore();
@@ -87,15 +97,27 @@ export default function DashboardScreen() {
   } = usePerksStore();
   const router = useRouter();
 
+  // Initialize with default date range (last 30 days)
+  const defaultDates = getDefaultDateRange();
+  const [startDate, setStartDate] = useState<Date | null>(defaultDates.startDate);
+  const [endDate, setEndDate] = useState<Date | null>(defaultDates.endDate);
+
+  const loadOrders = useCallback(async () => {
+    const startDateStr = startDate ? startDate.toISOString().split('T')[0] : undefined;
+    const endDateStr = endDate ? endDate.toISOString().split('T')[0] : undefined;
+    await fetchOrders(startDateStr, endDateStr);
+  }, [fetchOrders, startDate, endDate]);
+
   useEffect(() => {
     loadDashboardData();
-  }, [loadDashboardData]);
+    loadOrders();
+  }, [loadDashboardData, loadOrders]);
 
   const loadDashboardData = useCallback(async () => {
     await Promise.all([
       fetchAnalytics(),
       fetchPerks(),
-      fetchOrders(),
+      // fetchOrders(startDate, endDate),
     ]);
   }, [fetchAnalytics, fetchPerks, fetchOrders]);
 
@@ -165,12 +187,6 @@ export default function DashboardScreen() {
         <Card title="Quick Actions" style={styles.card}>
           <View style={styles.quickActions}>
             <QuickAction
-              title="Create Perk"
-              icon="add-circle"
-              onPress={() => router.push('/perks/create')}
-              color={colors.success}
-            />
-            <QuickAction
               title="Scan QR"
               icon="qr-code"
               onPress={() => router.push('/scanner')}
@@ -194,21 +210,6 @@ export default function DashboardScreen() {
         {/* Key Metrics */}
         <View style={styles.metricsGrid}>
           <MetricCard
-            title="Total Revenue"
-            value={formatCurrency(analytics?.totalRevenue || 0)}
-            subtitle="All time"
-            icon="cash"
-            color={colors.success}
-            onPress={() => router.push('/analytics/revenue')}
-          />
-          <MetricCard
-            title="Today's Sales"
-            value={formatCurrency(analytics?.todayRevenue || 0)}
-            subtitle={`${completedOrdersToday.length} orders`}
-            icon="trending-up"
-            color={colors.info}
-          />
-          <MetricCard
             title="Active Perks"
             value={analytics?.activePerks || 0}
             subtitle={`of ${analytics?.totalPerks || 0} total`}
@@ -225,90 +226,6 @@ export default function DashboardScreen() {
             onPress={() => router.push('/orders')}
           />
         </View>
-
-        {/* Performance Chart */}
-        {analytics && (
-          <Card title="Performance Overview" subtitle="Last 7 days">
-            <View style={styles.chartContainer}>
-              <VictoryChart
-                theme={VictoryTheme.material}
-                width={width - scale(64)}
-                height={200}
-                padding={{ left: 50, top: 20, right: 20, bottom: 50 }}
-              >
-                <VictoryAxis
-                  dependentAxis
-                  tickFormat={(t) => `₱${t}`}
-                  style={{
-                    tickLabels: { fill: colors.textSecondary, fontSize: 12 },
-                    grid: { stroke: colors.border, strokeWidth: 0.5 },
-                  }}
-                />
-                <VictoryAxis
-                  tickFormat={['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']}
-                  style={{
-                    tickLabels: { fill: colors.textSecondary, fontSize: 12 },
-                    grid: { stroke: 'transparent' },
-                  }}
-                />
-                <VictoryArea
-                  data={[
-                    { x: 1, y: 1200 },
-                    { x: 2, y: 1800 },
-                    { x: 3, y: 1500 },
-                    { x: 4, y: 2200 },
-                    { x: 5, y: 2800 },
-                    { x: 6, y: 3200 },
-                    { x: 7, y: 2400 },
-                  ]}
-                  style={{
-                    data: {
-                      fill: colors.primary,
-                      fillOpacity: 0.2,
-                      stroke: colors.primary,
-                      strokeWidth: 2,
-                    },
-                  }}
-                  animate={{
-                    duration: 1000,
-                    onLoad: { duration: 500 },
-                  }}
-                />
-              </VictoryChart>
-            </View>
-          </Card>
-        )}
-
-        {/* Top Performing Perks */}
-        {analytics?.topPerformingPerks && (
-          <Card title="Top Performing Perks" subtitle="This month">
-            {analytics.topPerformingPerks.slice(0, 3).map((perk, index) => (
-              <View key={perk.perkId}>
-                <View style={styles.topPerk}>
-                  <View style={styles.topPerkRank}>
-                    <Text style={[styles.rankText, { color: colors.primary }]}>
-                      #{index + 1}
-                    </Text>
-                  </View>
-                  <View style={styles.topPerkInfo}>
-                    <Text style={[styles.topPerkTitle, { color: colors.text }]}>
-                      {perk.title}
-                    </Text>
-                    <Text style={[styles.topPerkStats, { color: colors.textSecondary }]}>
-                      {perk.redemptions} redemptions • {formatCurrency(perk.revenue)}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => router.push(`/perks/${perk.perkId}`)}
-                  >
-                    <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
-                {index < 2 && <CardDivider />}
-              </View>
-            ))}
-          </Card>
-        )}
 
         {/* Recent Activity */}
         {analytics?.recentActivity && (

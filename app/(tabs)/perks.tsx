@@ -1,21 +1,21 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { Button } from '@/components/Button';
+import Card from '@/components/Card';
+import { Perk, usePerksStore } from '@/store/perksStore';
+import { useThemeStore } from '@/store/themeStore';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-  Switch,
   Alert,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useThemeStore } from '../../store/themeStore';
-import { usePerksStore, Perk } from '../../store/perksStore';
-import Card from '../../components/Card';
-import { Button } from '../../components/Button';
-import { Ionicons } from '@expo/vector-icons';
 import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
 
 interface PerkCardProps {
@@ -187,12 +187,6 @@ export default function PerksScreen() {
             {activePerks} active • {totalRedemptions} total redemptions
           </Text>
         </View>
-        <Button
-          title="Create Perk"
-          onPress={() => router.push('/perks/create')}
-          size="small"
-          leftIcon={<Ionicons name="add" size={16} color={colors.onPrimary} />}
-        />
       </View>
 
       {/* Filter Tabs */}

@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   ViewStyle,
 } from 'react-native';
-import { useThemeStore } from '../store/themeStore';
+import { useThemeStore } from '@/store/themeStore';
 import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
 
 interface CardProps {

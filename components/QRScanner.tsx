@@ -1,17 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  TouchableOpacity,
-  Modal,
-  Dimensions,
-} from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useThemeStore } from '../store/themeStore';
-import { usePerksStore } from '../store/perksStore';
+import { usePerksStore } from '@/store/perksStore';
+import { useThemeStore } from '@/store/themeStore';
 import { Ionicons } from '@expo/vector-icons';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  Alert,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
 
 
@@ -50,7 +49,8 @@ export default function QRScanner({ visible, onClose, onScanSuccess }: QRScanner
       if (order) {
         Alert.alert(
           'Redemption Successful!',
-          `Customer: ${order.customerName}\nPerk: ${order.perkTitle}\nCode: ${order.redemptionCode}`,
+          // `Customer: ${order.customerName}\nPerk: ${order.perkTitle}\nCode: ${order.redemptionCode}`,
+          'Sucess!',
           [
             {
               text: 'OK',
@@ -154,49 +154,49 @@ export default function QRScanner({ visible, onClose, onScanSuccess }: QRScanner
           barcodeScannerSettings={{
             barcodeTypes: ['qr'],
           }}
-        >
-          <View style={styles.overlay}>
-            {/* Header */}
-            <View style={[styles.header, { backgroundColor: colors.background }]}>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Ionicons name="close" size={24} color={colors.text} />
-              </TouchableOpacity>
-              <Text style={[styles.headerTitle, { color: colors.text }]}>
-                Scan QR Code
-              </Text>
-              <View style={{ width: 24 }} />
-            </View>
+        />
+        {/* Overlay positioned absolutely on top of camera */}
+        <View style={styles.overlay}>
+          {/* Header */}
+          <View style={[styles.header, { backgroundColor: colors.background }]}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Ionicons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>
+              Scan QR Code
+            </Text>
+            <View style={{ width: 24 }} />
+          </View>
 
-            {/* Scanner Frame */}
-            <View style={styles.scannerContainer}>
-              <View style={styles.scannerFrame}>
-                <View style={[styles.corner, styles.topLeft, { borderColor: colors.primary }]} />
-                <View style={[styles.corner, styles.topRight, { borderColor: colors.primary }]} />
-                <View style={[styles.corner, styles.bottomLeft, { borderColor: colors.primary }]} />
-                <View style={[styles.corner, styles.bottomRight, { borderColor: colors.primary }]} />
-              </View>
-            </View>
-
-            {/* Instructions */}
-            <View style={[styles.instructions, { backgroundColor: colors.background }]}>
-              <Text style={[styles.instructionText, { color: colors.text }]}>
-                {isProcessing
-                  ? 'Processing QR code...'
-                  : 'Position the QR code within the frame to scan'}
-              </Text>
-              {scanned && !isProcessing && (
-                <TouchableOpacity
-                  style={[styles.resetButton, { backgroundColor: colors.primary }]}
-                  onPress={resetScanner}
-                >
-                  <Text style={[styles.resetButtonText, { color: colors.background }]}>
-                    Scan Again
-                  </Text>
-                </TouchableOpacity>
-              )}
+          {/* Scanner Frame */}
+          <View style={styles.scannerContainer}>
+            <View style={styles.scannerFrame}>
+              <View style={[styles.corner, styles.topLeft, { borderColor: colors.primary }]} />
+              <View style={[styles.corner, styles.topRight, { borderColor: colors.primary }]} />
+              <View style={[styles.corner, styles.bottomLeft, { borderColor: colors.primary }]} />
+              <View style={[styles.corner, styles.bottomRight, { borderColor: colors.primary }]} />
             </View>
           </View>
-        </CameraView>
+
+          {/* Instructions */}
+          <View style={[styles.instructions, { backgroundColor: colors.background }]}>
+            <Text style={[styles.instructionText, { color: colors.text }]}>
+              {isProcessing
+                ? 'Processing QR code...'
+                : 'Position the QR code within the frame to scan'}
+            </Text>
+            {scanned && !isProcessing && (
+              <TouchableOpacity
+                style={[styles.resetButton, { backgroundColor: colors.primary }]}
+                onPress={resetScanner}
+              >
+                <Text style={[styles.resetButtonText, { color: colors.background }]}>
+                  Scan Again
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
       </View>
     </Modal>
   );
@@ -211,6 +211,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     flex: 1,
     justifyContent: 'space-between',
   },

@@ -1,6 +1,7 @@
-import { Link, useRouter } from 'expo-router';
+import { Link } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { Eye, EyeOff, Lock, Mail, Store } from 'lucide-react-native';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -15,9 +16,9 @@ import {
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Button from '../../components/Button';
-import { useAuthStore } from '../../store/authStore';
-import { useThemeStore } from '../../store/themeStore';
+import Button from '@/components/Button';
+import { useAuthStore } from '@/store/authStore';
+import { useThemeStore } from '@/store/themeStore';
 
 export default function LoginScreen() {
   const { colors, theme } = useThemeStore();
@@ -61,6 +62,14 @@ export default function LoginScreen() {
       }
     } catch (err) {
       Alert.alert('Login Error', error || 'Failed to login. Please try again.');
+    }
+  };
+
+  const handleRegister = async () => {
+    try {
+      await WebBrowser.openBrowserAsync('https://perksmania.com/merchant-register');
+    } catch (error) {
+      Alert.alert('Error', 'Could not open registration page. Please try again.');
     }
   };
 
@@ -205,13 +214,11 @@ export default function LoginScreen() {
             <Text style={[styles.footerText, { color: colors.subtext }]}>
               Don&apos;t have a merchant account?
             </Text>
-            <Link href="/(auth)/register" asChild>
-              <TouchableOpacity>
-                <Text style={[styles.signUpText, { color: colors.primary }]}>
-                  Sign Up
-                </Text>
-              </TouchableOpacity>
-            </Link>
+            <TouchableOpacity onPress={handleRegister}>
+              <Text style={[styles.signUpText, { color: colors.primary }]}>
+                Sign Up
+              </Text>
+            </TouchableOpacity>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>

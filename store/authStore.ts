@@ -1,20 +1,47 @@
 
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { signOut as apiSignOut, getCurrentUser, signIn } from '@/services/auth';
+import { Merchant } from '@/types/user';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
+// Local interface for the app's user state (normalized from API)
 interface MerchantUser {
   id: string;
   businessName: string;
   email: string;
   phone: string;
   businessAddress: string;
-  businessType: string;
+  businessType?: string;
   logo?: string;
   verified: boolean;
   subscription: 'basic' | 'premium' | 'enterprise';
   createdAt: string;
+  ownerName: string;
+  city: string;
+  province: string;
+  region: string;
+}
+
+// Function to adapt API Merchant to local MerchantUser
+function adaptMerchantToUser(merchant: Merchant): MerchantUser {
+  return {
+    id: merchant._id,
+    businessName: merchant.business_name,
+    email: merchant.email,
+    phone: merchant.office_contact,
+    businessAddress: merchant.office_address,
+    businessType: merchant.business_category?.business || undefined,
+    logo: merchant.logoimage || undefined,
+    verified: merchant.is_activated && merchant.verification_status === 'verified',
+    subscription: merchant.membership_plan as 'basic' | 'premium' | 'enterprise' || 'basic',
+    createdAt: merchant.creation_date.$date,
+    ownerName: merchant.owners_name,
+    city: merchant.city,
+    province: merchant.province,
+    region: merchant.region,
+  };
 }
 
 interface AuthState {
@@ -26,21 +53,12 @@ interface AuthState {
   
   // Actions
   login: (email: string, password: string) => Promise<boolean>;
-  register: (data: RegisterData) => Promise<boolean>;
   logout: () => void;
   updateProfile: (updates: Partial<MerchantUser>) => void;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
 }
 
-interface RegisterData {
-  businessName: string;
-  email: string;
-  password: string;
-  phone: string;
-  businessAddress: string;
-  businessType: string;
-}
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -55,92 +73,55 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         
         try {
-          // Simulate API call - replace with actual API
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Mock successful login
-          const mockUser: MerchantUser = {
-            id: '1',
-            businessName: 'Test Restaurant',
-            email,
-            phone: '+1234567890',
-            businessAddress: '123 Business St, City, State',
-            businessType: 'restaurant',
-            verified: true,
-            subscription: 'premium',
-            createdAt: new Date().toISOString(),
-          };
-          
-          const mockToken = 'mock-jwt-token-123';
+          // Use real auth API
+          const response = await signIn(email, password);
+          if (response.data?.accessToken) {
+            // Get the user profile after successful login
+            const userProfile = await getCurrentUser();
+            console.log("User profile:", userProfile);
+            
+            set({
+              user: adaptMerchantToUser(userProfile),
+              token: response.data.accessToken,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+            });
+            
+            router.replace('/(tabs)');
+            return true;
+          } else {
+            throw new Error('Login failed - no access token received');
+          }
+        } catch (error: any) {
+          console.error('Login error:', error);
+          const errorMessage = error?.userMessage || error?.message || 'Invalid email or password. Please try again.';
           
           set({
-            user: mockUser,
-            token: mockToken,
-            isAuthenticated: true,
             isLoading: false,
-            error: null,
-          });
-          
-          router.replace('/(tabs)');
-          return true;
-        } catch (error) {
-          set({
-            isLoading: false,
-            error: 'Invalid email or password',
+            error: errorMessage,
           });
           return false;
         }
       },
 
-      register: async (data: RegisterData) => {
-        set({ isLoading: true, error: null });
-        
+
+      logout: async () => {
         try {
-          // Simulate API call - replace with actual API
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          
-          // Mock successful registration
-          const newUser: MerchantUser = {
-            id: Date.now().toString(),
-            businessName: data.businessName,
-            email: data.email,
-            phone: data.phone,
-            businessAddress: data.businessAddress,
-            businessType: data.businessType,
-            verified: false, // New accounts need verification
-            subscription: 'basic',
-            createdAt: new Date().toISOString(),
-          };
-          
-          const mockToken = 'mock-jwt-token-new-user';
-          
+          // Call API logout to clear server-side session
+          await apiSignOut();
+        } catch (error) {
+          console.error('Logout error:', error);
+        } finally {
+          // Always clear local state regardless of API call result
           set({
-            user: newUser,
-            token: mockToken,
-            isAuthenticated: true,
-            isLoading: false,
+            user: null,
+            token: null,
+            isAuthenticated: false,
             error: null,
           });
-          
-          router.replace('/(tabs)');
-          return true;
-        } catch (error) {
-          set({
-            isLoading: false,
-            error: 'Registration failed. Please try again.',
-          });
-          return false;
+          router.replace('/(auth)/login');
         }
-      },
-
-      logout: () => {
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-          error: null,
-        });
-        router.replace('/(auth)/login');
       },
 
       updateProfile: (updates: Partial<MerchantUser>) => {

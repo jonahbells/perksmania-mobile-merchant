@@ -9,10 +9,10 @@ import {
   Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useThemeStore } from '../../store/themeStore';
-import { useAuthStore } from '../../store/authStore';
-import Card, { CardDivider } from '../../components/Card';
-import { Button } from '../../components/Button';
+import { useThemeStore } from '@/store/themeStore';
+import { useAuthStore } from '@/store/authStore';
+import Card, { CardDivider } from '@/components/Card';
+import { Button } from '@/components/Button';
 import { Ionicons } from '@expo/vector-icons';
 import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
 

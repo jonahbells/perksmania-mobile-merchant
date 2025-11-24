@@ -1,20 +1,22 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { Button } from '@/components/Button';
+import Card from '@/components/Card';
+import { Order, usePerksStore } from '@/store/perksStore';
+import { useThemeStore } from '@/store/themeStore';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-  TextInput,
   Alert,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useThemeStore } from '../../store/themeStore';
-import { usePerksStore, Order } from '../../store/perksStore';
-import Card from '../../components/Card';
-import { Button } from '../../components/Button';
-import { Ionicons } from '@expo/vector-icons';
 import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
 
 interface OrderCardProps {
@@ -157,22 +159,70 @@ function OrderCard({ order, onUpdateStatus }: OrderCardProps) {
   );
 }
 
+// Helper function to get default date range (last 30 days)
+const getDefaultDateRange = () => {
+  const today = new Date();
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+  
+  return {
+    startDate: thirtyDaysAgo,
+    endDate: today
+  };
+};
+
 export default function OrdersScreen() {
   const { colors } = useThemeStore();
   const { orders, isLoading, fetchOrders, updateOrderStatus } = usePerksStore();
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed' | 'cancelled'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Initialize with default date range (last 30 days)
+  const defaultDates = getDefaultDateRange();
+  const [startDate, setStartDate] = useState<Date | null>(defaultDates.startDate);
+  const [endDate, setEndDate] = useState<Date | null>(defaultDates.endDate);
+  
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+
+  const loadOrders = useCallback(async () => {
+    const startDateStr = startDate ? startDate.toISOString().split('T')[0] : undefined;
+    const endDateStr = endDate ? endDate.toISOString().split('T')[0] : undefined;
+    await fetchOrders(startDateStr, endDateStr);
+  }, [fetchOrders, startDate, endDate]);
 
   useEffect(() => {
     loadOrders();
-  }, [loadOrders]);
-
-  const loadOrders = useCallback(async () => {
-    await fetchOrders();
-  }, [fetchOrders]);
+  }, [startDate, endDate]); // Reload when dates change
 
   const handleStatusUpdate = async (orderId: string, status: Order['status']) => {
     await updateOrderStatus(orderId, status);
+  };
+
+  const handleStartDateChange = (event: any, selectedDate?: Date) => {
+    setShowStartDatePicker(false);
+    if (selectedDate) {
+      setStartDate(selectedDate);
+    }
+  };
+
+  const handleEndDateChange = (event: any, selectedDate?: Date) => {
+    setShowEndDatePicker(false);
+    if (selectedDate) {
+      setEndDate(selectedDate);
+    }
+  };
+
+  const clearDateRange = () => {
+    // Reset to default date range instead of clearing completely
+    const defaultDates = getDefaultDateRange();
+    setStartDate(defaultDates.startDate);
+    setEndDate(defaultDates.endDate);
+  };
+
+  const formatDate = (date: Date | null) => {
+    if (!date) return '';
+    return date.toLocaleDateString();
   };
 
   const filteredOrders = orders.filter(order => {
@@ -222,80 +272,134 @@ export default function OrdersScreen() {
         </View>
       </View>
 
+      {/* Date Range Picker */}
+      <View style={styles.dateRangeContainer}>
+        <View style={styles.dateRow}>
+          <TouchableOpacity
+            style={[styles.dateButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => setShowStartDatePicker(true)}
+          >
+            <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
+            <Text style={[styles.dateButtonText, { color: startDate ? colors.text : colors.textSecondary }]}>
+              {startDate ? formatDate(startDate) : 'Start Date'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.dateButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => setShowEndDatePicker(true)}
+          >
+            <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
+            <Text style={[styles.dateButtonText, { color: endDate ? colors.text : colors.textSecondary }]}>
+              {endDate ? formatDate(endDate) : 'End Date'}
+            </Text>
+          </TouchableOpacity>
+
+          {(startDate || endDate) && (
+            <TouchableOpacity
+              style={[styles.clearButton, { backgroundColor: colors.primary + '20' }]}
+              onPress={clearDateRange}
+            >
+              <Ionicons name="refresh" size={16} color={colors.primary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Date Range Display */}
+        {(startDate || endDate) && (
+          <View style={styles.dateRangeDisplay}>
+            <Text style={[styles.dateRangeText, { color: colors.textSecondary }]}>
+              {startDate && endDate 
+                ? `${formatDate(startDate)} - ${formatDate(endDate)}`
+                : startDate 
+                  ? `From ${formatDate(startDate)}`
+                  : `Until ${formatDate(endDate)}`
+              }
+            </Text>
+          </View>
+        )}
+      </View>
+
       {/* Filter Tabs */}
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[
-            styles.filterTab,
-            filter === 'all' && { backgroundColor: colors.primary },
-          ]}
-          onPress={() => setFilter('all')}
+      <View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterContainer}
         >
-          <Text
+          <TouchableOpacity
             style={[
-              styles.filterText,
-              {
-                color: filter === 'all' ? colors.onPrimary : colors.textSecondary,
-              },
+              styles.filterTab,
+              filter === 'all' && { backgroundColor: colors.primary },
             ]}
+            onPress={() => setFilter('all')}
           >
-            All ({orders.length})
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.filterTab,
-            filter === 'pending' && { backgroundColor: colors.primary },
-          ]}
-          onPress={() => setFilter('pending')}
-        >
-          <Text
+            <Text
+              style={[
+                styles.filterText,
+                {
+                  color: filter === 'all' ? colors.onPrimary : colors.textSecondary,
+                },
+              ]}
+            >
+              All ({orders.length})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[
-              styles.filterText,
-              {
-                color: filter === 'pending' ? colors.onPrimary : colors.textSecondary,
-              },
+              styles.filterTab,
+              filter === 'pending' && { backgroundColor: colors.primary },
             ]}
+            onPress={() => setFilter('pending')}
           >
-            Pending ({pendingCount})
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.filterTab,
-            filter === 'completed' && { backgroundColor: colors.primary },
-          ]}
-          onPress={() => setFilter('completed')}
-        >
-          <Text
+            <Text
+              style={[
+                styles.filterText,
+                {
+                  color: filter === 'pending' ? colors.onPrimary : colors.textSecondary,
+                },
+              ]}
+            >
+              Pending ({pendingCount})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[
-              styles.filterText,
-              {
-                color: filter === 'completed' ? colors.onPrimary : colors.textSecondary,
-              },
+              styles.filterTab,
+              filter === 'completed' && { backgroundColor: colors.primary },
             ]}
+            onPress={() => setFilter('completed')}
           >
-            Completed ({completedCount})
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.filterTab,
-            filter === 'cancelled' && { backgroundColor: colors.primary },
-          ]}
-          onPress={() => setFilter('cancelled')}
-        >
-          <Text
+            <Text
+              style={[
+                styles.filterText,
+                {
+                  color: filter === 'completed' ? colors.onPrimary : colors.textSecondary,
+                },
+              ]}
+            >
+              Completed ({completedCount})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[
-              styles.filterText,
-              {
-                color: filter === 'cancelled' ? colors.onPrimary : colors.textSecondary,
-              },
+              styles.filterTab,
+              filter === 'cancelled' && { backgroundColor: colors.primary },
             ]}
+            onPress={() => setFilter('cancelled')}
           >
-            Cancelled ({cancelledCount})
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.filterText,
+                {
+                  color: filter === 'cancelled' ? colors.onPrimary : colors.textSecondary,
+                },
+              ]}
+            >
+              Cancelled ({cancelledCount})
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
 
       {/* Orders List */}
@@ -340,6 +444,28 @@ export default function OrdersScreen() {
             ))
         )}
       </ScrollView>
+
+      {/* Date Pickers */}
+      {showStartDatePicker && (
+        <DateTimePicker
+          value={startDate || new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={handleStartDateChange}
+          maximumDate={endDate || new Date()}
+        />
+      )}
+
+      {showEndDatePicker && (
+        <DateTimePicker
+          value={endDate || new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={handleEndDateChange}
+          minimumDate={startDate || new Date(2020, 0, 1)}
+          maximumDate={new Date()}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -365,13 +491,13 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     paddingHorizontal: scale(16),
-    marginBottom: verticalScale(16),
+    marginBottom: verticalScale(8),
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: scale(12),
-    paddingVertical: verticalScale(10),
+    paddingVertical: verticalScale(4),
     borderRadius: moderateScale(8),
     borderWidth: 1,
     gap: scale(8),
@@ -380,10 +506,49 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: moderateScale(14),
   },
+  dateRangeContainer: {
+    paddingHorizontal: scale(16),
+    marginBottom: verticalScale(8),
+  },
+  dateRow: {
+    flexDirection: 'row',
+    gap: scale(8),
+    alignItems: 'center',
+  },
+  dateButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: scale(12),
+    paddingVertical: verticalScale(10),
+    borderRadius: moderateScale(8),
+    borderWidth: 1,
+    gap: scale(8),
+  },
+  dateButtonText: {
+    fontSize: moderateScale(14),
+    flex: 1,
+  },
+  clearButton: {
+    paddingHorizontal: scale(12),
+    paddingVertical: verticalScale(10),
+    borderRadius: moderateScale(8),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dateRangeDisplay: {
+    marginTop: verticalScale(8),
+    alignItems: 'center',
+  },
+  dateRangeText: {
+    fontSize: moderateScale(12),
+    fontStyle: 'italic',
+  },
   filterContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: scale(16),
-    marginBottom: verticalScale(16),
+    marginBottom: verticalScale(8),
     gap: scale(8),
   },
   filterTab: {

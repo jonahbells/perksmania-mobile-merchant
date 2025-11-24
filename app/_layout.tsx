@@ -6,8 +6,8 @@ import * as Notifications from "expo-notifications";
 import { StatusBar, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useThemeStore } from "../store/themeStore";
-import { useAuthStore } from "../store/authStore";
+import { useThemeStore } from "@/store/themeStore";
+import { useAuthStore } from "@/store/authStore";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({

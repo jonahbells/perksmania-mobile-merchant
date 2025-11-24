@@ -1,6 +1,9 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { getAllPerks } from '@/services/perks';
+import { getMerchantTransactions, updateTransactionStatus, verifyRedemptionCode } from '@/services/transactions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import { useAuthStore } from './authStore';
 
 export interface Perk {
   id: string;
@@ -69,7 +72,7 @@ interface PerksState {
   fetchPerks: () => Promise<void>;
 
   // Order actions
-  fetchOrders: () => Promise<void>;
+  fetchOrders: (startDate?: string, endDate?: string) => Promise<void>;
   updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
   verifyRedemption: (redemptionCode: string) => Promise<Order | null>;
 
@@ -222,6 +225,7 @@ export const usePerksStore = create<PerksState>()(
       deletePerk: async (id) => {
         set({ isLoading: true, error: null });
         try {
+          
           // Simulate API call
           await new Promise(resolve => setTimeout(resolve, 500));
           
@@ -245,11 +249,15 @@ export const usePerksStore = create<PerksState>()(
       fetchPerks: async () => {
         set({ isLoading: true, error: null });
         try {
+          const userId = useAuthStore.getState().user?.id;
+
+          if (!userId) return;
           // Simulate API call
           await new Promise(resolve => setTimeout(resolve, 1000));
+          const result = await getAllPerks(userId)
           
           set({
-            perks: mockPerks,
+            perks: result,
             isLoading: false,
           });
         } catch (error) {
@@ -257,14 +265,18 @@ export const usePerksStore = create<PerksState>()(
         }
       },
 
-      fetchOrders: async () => {
+      fetchOrders: async (startDate?: string, endDate?: string) => {
         set({ isLoading: true, error: null });
         try {
+          const userId = useAuthStore.getState().user?.id;
+
+          if (!userId) return;
           // Simulate API call
           await new Promise(resolve => setTimeout(resolve, 800));
+          const result = await getMerchantTransactions(userId, startDate, endDate)
           
           set({
-            orders: mockOrders,
+            orders: result,
             isLoading: false,
           });
         } catch (error) {
@@ -277,7 +289,8 @@ export const usePerksStore = create<PerksState>()(
         try {
           // Simulate API call
           await new Promise(resolve => setTimeout(resolve, 500));
-          
+          const order = await updateTransactionStatus(orderId, status)
+          if (order.success == true) return;
           set((state) => ({
             orders: state.orders.map(order => 
               order.id === orderId 
@@ -297,11 +310,11 @@ export const usePerksStore = create<PerksState>()(
           // Simulate API call
           await new Promise(resolve => setTimeout(resolve, 1000));
           
-          const order = get().orders.find(o => o.redemptionCode === redemptionCode && o.status === 'pending');
+          const order = await verifyRedemptionCode(redemptionCode)
           
           if (order) {
             // Update order status to completed
-            await get().updateOrderStatus(order.id, 'completed');
+            set({ isLoading: false });
             return order;
           }
           
@@ -335,10 +348,10 @@ export const usePerksStore = create<PerksState>()(
               { perkId: '3', title: 'Free Dessert', redemptions: 12, revenue: 1800 },
             ],
             recentActivity: [
-              { id: '1', action: 'New customer redeemed "20% Off Coffee"', timestamp: '2 minutes ago' },
-              { id: '2', action: 'Perk "Free Dessert" was updated', timestamp: '1 hour ago' },
-              { id: '3', action: '5 customers redeemed perks', timestamp: '3 hours ago' },
-              { id: '4', action: 'New perk "Happy Hour" was created', timestamp: '1 day ago' },
+              // { id: '1', action: 'New customer redeemed "20% Off Coffee"', timestamp: '2 minutes ago' },
+              // { id: '2', action: 'Perk "Free Dessert" was updated', timestamp: '1 hour ago' },
+              // { id: '3', action: '5 customers redeemed perks', timestamp: '3 hours ago' },
+              // { id: '4', action: 'New perk "Happy Hour" was created', timestamp: '1 day ago' },
             ],
           };
           

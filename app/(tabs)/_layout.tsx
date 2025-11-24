@@ -1,11 +1,11 @@
+import QRScanner from '@/components/QRScanner';
+import { usePerksStore } from '@/store/perksStore';
+import { useThemeStore } from '@/store/themeStore';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 import { moderateScale } from 'react-native-size-matters';
-import { usePerksStore } from '../../store/perksStore';
-import { useThemeStore } from '../../store/themeStore';
-import QRScanner from '../../components/QRScanner';
 
 function TabBarBadge({ count }: { count: number }) {
   const { colors } = useThemeStore();

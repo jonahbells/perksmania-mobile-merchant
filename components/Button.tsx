@@ -1,8 +1,7 @@
+import { useThemeStore } from '@/store/themeStore';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, ActivityIndicator, ViewStyle, TextStyle, View, Image, ImageSourcePropType } from 'react-native';
-import { useThemeStore } from '../store/themeStore';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, Easing } from 'react-native-reanimated';
-import { Platform } from 'react-native';
+import { ActivityIndicator, Image, ImageSourcePropType, Platform, StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 interface ButtonProps {
   title: string;
@@ -163,13 +162,14 @@ export const Button: React.FC<ButtonProps> = ({
         onPress={onPress}
         disabled={disabled || loading}
         activeOpacity={0.8}
-        style={[animatedStyle, fullWidth ? styles.fullWidth : undefined]}
+        // style={[animatedStyle, fullWidth ? styles.fullWidth : undefined]}
+        style={[animatedStyle, buttonStyles, { backgroundColor: colors.primary }]}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
       >
-          <View style={[buttonStyles, {backgroundColor: colors.primary}]}>
+          {/* <View style={[buttonStyles, {backgroundColor: colors.primary}]}> */}
           {renderContent()}
-        </View>
+        {/* </View> */}
       </AnimatedTouchable>
     );
   }
