@@ -267,24 +267,35 @@ export const updateTransactionStatus = async (
 export const verifyRedemptionCode = async (
   redemptionCode: string
 ): Promise<Order | null> => {
+  
   try {
-    const response = await api.post(`/qrencoder/decode`, {
-      code: redemptionCode,
-    });
+    // Clean the code by removing any surrounding quotes
+    let cleanCode = redemptionCode.trim();
+    if (cleanCode.startsWith('"') && cleanCode.endsWith('"')) {
+      cleanCode = cleanCode.slice(1, -1);
+    }
+    
+    const response = await api.post(
+      `/qrencoder/decode`,
+      {
+        code: cleanCode,
+      },
+    );
     
     const transaction = response.data;
-
-    console.log(transaction)
     
     if (transaction.result === true) {
       return transaction;
+    }
+    
+    if (transaction.result === false) {
+      throw new Error(transaction.description || 'Invalid QR Code');
     }
     
     return null;
   } catch (error: any) {
     console.log('Verify redemption error:', error);
     
-    // If it's a 404 or similar, return null (code not found)
     if (error.response?.status === 404) {
       return null;
     }
