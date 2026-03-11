@@ -76,7 +76,7 @@ export interface Transaction {
   customer: Customer;
   perks: Perk;
   creation_date: string;
-  status: 'For Approval' | 'Approved' | 'Cancelled';
+  status: 'pendingScan' | 'For Approval' | 'Approved' | 'Cancelled';
   update_date?: string;
   // Additional fields that might be present
   notes?: string;
@@ -84,12 +84,14 @@ export interface Transaction {
 }
 
 // Status mapping between API and app
-type APIStatus = 'For Approval' | 'Approved' | 'Cancelled';
+type APIStatus = 'pendingScan' | 'For Approval' | 'Approved' | 'Cancelled';
 type AppStatus = 'pending' | 'completed' | 'cancelled';
 
 // Helper function to map API status to app status
 function mapAPIStatusToApp(apiStatus: APIStatus): AppStatus {
   switch (apiStatus) {
+    case 'pendingScan':
+      return 'pending';
     case 'For Approval':
       return 'pending';
     case 'Approved':
@@ -203,8 +205,13 @@ export const getMerchantTransactions = async (
     });
     const transactionResponse: TransactionResponse = response.data;
     
+    // Hide customer-side pendingScan rows from merchant orders UI.
+    const visibleRows = transactionResponse.rows.filter(
+      (txn) => txn.status !== 'pendingScan'
+    );
+
     // Convert API transactions to app orders
-    return transactionResponse.rows.map(adaptTransactionToOrder);
+    return visibleRows.map(adaptTransactionToOrder);
   } catch (error: any) {
     const errorResponse = createErrorResponse(error, {
       service: 'transactions',
